@@ -11,24 +11,23 @@
         <div class="grid grid-cols-1 gap-8 mt-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
             @foreach ($films as $film)
                 @php
-                    use Illuminate\Support\Str;
-
                     $imageSrc = $film->image_url 
-                        ?? ($film->image 
-                            ? (Str::startsWith($film->image, ['http://','https://']) 
+                        ?: ($film->image
+                            ? (\Illuminate\Support\Str::startsWith($film->image, ['http://','https://']) 
                                 ? $film->image 
-                                : asset('storage/' . $film->image)) 
+                                : asset('storage/' . ltrim($film->image, '/')))
                             : 'https://via.placeholder.com/300x450?text=No+Image');
-                    $isAdmin = auth()->check() && auth()->user()->is_admin;
+
+                    $isAdmin = auth()->user()?->is_admin === 1;
                 @endphp
 
                 <div class="relative">
-                    <x-collection-card 
+                    <x-koleksi-card 
                         :title="$film->title"
                         :genre="$film->genre"
                         :image="$imageSrc"
                         :alt="$film->title"
-                        :link="!$isAdmin ? route('checkout.add', $film->id) : '#'"
+                        :link="$isAdmin ? '#' : route('checkout.add', $film->id)"
                     />
 
                     @if($isAdmin)
@@ -37,7 +36,10 @@
                                class="flex-1 py-2 font-semibold text-center text-gray-900 bg-yellow-400 rounded-lg hover:bg-yellow-300">
                                 Edit
                             </a>
-                            <form action="{{ route('films.destroy', $film->id) }}" method="POST" class="flex-1">
+
+                            <form action="{{ route('films.destroy', $film->id) }}" 
+                                  method="POST" 
+                                  class="flex-1">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" 
